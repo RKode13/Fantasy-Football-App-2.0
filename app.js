@@ -1,3 +1,113 @@
+
+function toNormalizedIdentityKey(name, team, pos){
+  const n=(typeof name==="string"?name.trim().toLowerCase():"");
+  const t=(typeof team==="string"?team.trim().toUpperCase():"");
+  const p=(typeof pos==="string"?pos.trim().toUpperCase():"");
+  return {full:n+"|"+t+"|"+p,nameTeam:n+"|"+t,namePos:n+"|"+p,nameOnly:n};
+}
+function extractAdpRecords(payload){
+  if(Array.isArray(payload)) return payload;
+  if(payload && typeof payload==="object"){
+    if(Array.isArray(payload.records)) return payload.records;
+    if(Array.isArray(payload.players)) return payload.players;
+    if(Array.isArray(payload.data)) return payload.data;
+  }
+  return [];
+}
+function pickFirstDefined(source, keys){
+  if(!source || typeof source!=="object") return undefined;
+  for(const key of keys){
+    if(Object.prototype.hasOwnProperty.call(source,key) && source[key]!==undefined) return source[key];
+  }
+  return undefined;
+}
+function fallbackNormalizeAdpData(adpLike){
+  const input=(adpLike && typeof adpLike==="object") ? adpLike : {};
+  const raw=pickFirstDefined(input,["overall","adp","avgPick","averageDraftPosition"]);
+  const overall=Number(raw);
+  return {overall:Number.isFinite(overall)?overall:null};
+}
+function fallbackNormalizePlayerIdentity(playerLike){
+  const input=(playerLike && typeof playerLike==="object") ? playerLike : {};
+  const rawId=pickFirstDefined(input,["id","playerId","player_id"]);
+  const idNum=Number(rawId);
+  const nameVal=pickFirstDefined(input,["name","fullName","playerName","player_name"]);
+  const teamVal=pickFirstDefined(input,["team","teamAbbr","team_abbr","teamCode"]);
+  const posVal=pickFirstDefined(input,["pos","position","positionCode"]);
+  return {
+    id:Number.isFinite(idNum)?Math.trunc(idNum):null,
+    name:typeof nameVal==="string"?nameVal.trim():"",
+    team:typeof teamVal==="string"?teamVal.trim().toUpperCase():"",
+    pos:typeof posVal==="string"?posVal.trim().toUpperCase():""
+  };
+}
+function applyAdpOverlay(players, externalPayload){
+  if(!Array.isArray(players) || !players.length){
+    return {attempted:0,matched:0,updated:0,unmatched:0,invalidAdp:0};
+  }
+
+  const records=extractAdpRecords(externalPayload);
+  if(!records.length){
+    return {attempted:0,matched:0,updated:0,unmatched:0,invalidAdp:0};
+  }
+
+  const byId=new Map();
+  const byFull=new Map();
+  const byNameTeam=new Map();
+  const byNamePos=new Map();
+  const byNameOnly=new Map();
+
+  players.forEach(function(player){
+    if(player && typeof player.id==="number") byId.set(player.id, player);
+    const keys=toNormalizedIdentityKey(player && player.name, player && player.team, player && player.pos);
+    if(keys.full!=="||") byFull.set(keys.full, player);
+    if(keys.nameTeam!=="|") byNameTeam.set(keys.nameTeam, player);
+    if(keys.namePos!=="|") byNamePos.set(keys.namePos, player);
+    if(keys.nameOnly) byNameOnly.set(keys.nameOnly, player);
+  });
+
+  const adapters=(typeof DataAdapters!=="undefined" && DataAdapters)?DataAdapters:null;
+  const normalizeAdp=(adapters && typeof adapters.normalizeAdpData==="function") ? adapters.normalizeAdpData : fallbackNormalizeAdpData;
+  const normalizeIdentity=(adapters && typeof adapters.normalizePlayerIdentity==="function") ? adapters.normalizePlayerIdentity : fallbackNormalizePlayerIdentity;
+  const counts={attempted:records.length,matched:0,updated:0,unmatched:0,invalidAdp:0};
+
+  records.forEach(function(record){
+    const normalizedAdp=normalizeAdp(record && record.adpData ? record.adpData : record);
+    const adpValue=normalizedAdp && Number.isFinite(normalizedAdp.overall) ? normalizedAdp.overall : null;
+    if(!(Number.isFinite(adpValue) && adpValue>0)){
+      counts.invalidAdp+=1;
+      return;
+    }
+
+    const identity=normalizeIdentity(record);
+
+    let match=null;
+    if(Number.isFinite(identity.id) && byId.has(identity.id)){
+      match=byId.get(identity.id);
+    } else {
+      const keys=toNormalizedIdentityKey(identity.name, identity.team, identity.pos);
+      match=byFull.get(keys.full) || byNameTeam.get(keys.nameTeam) || byNamePos.get(keys.namePos) || byNameOnly.get(keys.nameOnly) || null;
+    }
+
+    if(!match){
+      counts.unmatched+=1;
+      return;
+    }
+
+    counts.matched+=1;
+    if(match.adp!==adpValue){
+      match.adp=adpValue;
+      counts.updated+=1;
+    }
+  });
+
+  return counts;
+}
+const ADP_OVERLAY_SUMMARY=applyAdpOverlay(PLAYERS, (typeof window!=="undefined" ? window.EXTERNAL_ADP_PAYLOAD : null));
+if(ADP_OVERLAY_SUMMARY.attempted>0){
+  console.info("[ADP overlay]", ADP_OVERLAY_SUMMARY);
+}
+
 const state = {format:"half",teams:12,drafted:[],watch:[],compare:[],compareDetailPlayerId:null,rankingDetailPlayerId:null,search:"",pos:"ALL",tab:"setup",rankSort:"rank",rankDir:"asc",favoriteTeam:"",slots:{QB:1,RB:2,WR:2,TE:1,K:1,DST:1,FLEX:1},flexMode:["RB","WR","TE"],compareMetrics:new Set(["position","team","age","exp","bye","elite","projfp","projppg","avg3","gp2025","avg2025","median2025","low2025","high2025","posrank","adp","sleeper","bust","injury"])};
 
 function explainContent(type){
