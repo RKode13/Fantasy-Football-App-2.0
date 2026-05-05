@@ -108,6 +108,53 @@ if(ADP_OVERLAY_SUMMARY.attempted>0){
   console.info("[ADP overlay]", ADP_OVERLAY_SUMMARY);
 }
 
+function readHistoricalStatsPayload(){
+  if(typeof DataProviders!=="undefined" && DataProviders && typeof DataProviders.historicalStats==="function") return DataProviders.historicalStats();
+  if(typeof window!=="undefined" && Object.prototype.hasOwnProperty.call(window,"HISTORICAL_STATS_PAYLOAD")) return window.HISTORICAL_STATS_PAYLOAD;
+  return null;
+}
+function applyHistoricalStatsOverlay(players, payload){
+  if(!Array.isArray(players) || !players.length || !payload || typeof payload!=="object") return {attempted:0,matched:0,updated:0};
+  const byId=new Map();
+  players.forEach(function(player){ if(player && typeof player.id==="number") byId.set(player.id, player); });
+  const byName=new Map();
+  players.forEach(function(player){ if(player && typeof player.name==="string") byName.set(player.name.trim().toLowerCase(), player); });
+
+  const records=Array.isArray(payload.records)?payload.records:Array.isArray(payload.players)?payload.players:Array.isArray(payload.data)?payload.data:[];
+  const counts={attempted:records.length,matched:0,updated:0};
+  records.forEach(function(record){
+    if(!record || typeof record!=="object") return;
+    const idNum=Number(record.id ?? record.playerId ?? record.player_id);
+    const nameKey=typeof (record.name ?? record.playerName)==="string" ? (record.name ?? record.playerName).trim().toLowerCase() : "";
+    const player=Number.isFinite(idNum)?byId.get(Math.trunc(idNum)):(nameKey?byName.get(nameKey):null);
+    if(!player || !record.stats || typeof record.stats!=="object") return;
+    counts.matched+=1;
+    Object.keys(record.stats).forEach(function(season){
+      const seasonStats=record.stats[season];
+      if(!seasonStats || typeof seasonStats!=="object") return;
+      if(!player.stats || typeof player.stats!=="object") player.stats={};
+      const existingSeason=(player.stats[season] && typeof player.stats[season]==="object") ? player.stats[season] : {};
+      let seasonUpdated=false;
+      Object.keys(seasonStats).forEach(function(field){
+        if(seasonStats[field]===undefined) return;
+        if(existingSeason[field]!==seasonStats[field]){
+          existingSeason[field]=seasonStats[field];
+          seasonUpdated=true;
+        }
+      });
+      if(seasonUpdated){
+        player.stats[season]=existingSeason;
+        counts.updated+=1;
+      }
+    });
+  });
+  return counts;
+}
+const HISTORICAL_STATS_OVERLAY_SUMMARY=applyHistoricalStatsOverlay(PLAYERS, readHistoricalStatsPayload());
+if(HISTORICAL_STATS_OVERLAY_SUMMARY.attempted>0){
+  console.info("[Historical stats overlay]", HISTORICAL_STATS_OVERLAY_SUMMARY);
+}
+
 const state = {format:"half",teams:12,drafted:[],watch:[],compare:[],compareDetailPlayerId:null,rankingDetailPlayerId:null,search:"",pos:"ALL",tab:"setup",rankSort:"rank",rankDir:"asc",favoriteTeam:"",slots:{QB:1,RB:2,WR:2,TE:1,K:1,DST:1,FLEX:1},flexMode:["RB","WR","TE"],compareMetrics:new Set(["position","team","age","exp","bye","elite","projfp","projppg","avg3","gp2025","avg2025","median2025","low2025","high2025","posrank","adp","sleeper","bust","injury"])};
 
 function explainContent(type){
