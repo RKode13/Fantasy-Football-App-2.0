@@ -41,6 +41,69 @@ function fallbackNormalizePlayerIdentity(playerLike){
     pos:typeof posVal==="string"?posVal.trim().toUpperCase():""
   };
 }
+function extractHistoricalStatsRecords(payload){
+  if(Array.isArray(payload)) return payload;
+  if(payload && typeof payload==="object"){
+    if(Array.isArray(payload.records)) return payload.records;
+    if(Array.isArray(payload.players)) return payload.players;
+    if(Array.isArray(payload.data)) return payload.data;
+  }
+  return [];
+}
+function normalizeHistoricalStatLine(statLike){
+  const input=(statLike && typeof statLike==="object") ? statLike : {};
+  const gp=Number(input.gp);
+  const avg=Number(input.avg);
+  const median=Number(input.median);
+  const low=Number(input.low);
+  const high=Number(input.high);
+  if(!(Number.isFinite(gp) && Number.isFinite(avg) && Number.isFinite(median) && Number.isFinite(low) && Number.isFinite(high))) return null;
+  return {gp:Math.trunc(gp),avg:avg,median:median,low:low,high:high};
+}
+function applyHistoricalStatsOverlay(players, externalPayload){
+  const records=extractHistoricalStatsRecords(externalPayload);
+  if(!Array.isArray(players) || !players.length || !records.length) return {attempted:0,matched:0,updated:0,invalid:0,unmatched:0};
+
+  const byId=new Map();
+  const byFull=new Map();
+  const byNameTeam=new Map();
+  const byNamePos=new Map();
+  const byNameOnly=new Map();
+  players.forEach(function(player){
+    if(player && typeof player.id==="number") byId.set(player.id, player);
+    const keys=toNormalizedIdentityKey(player && player.name, player && player.team, player && player.pos);
+    if(keys.full!=="||") byFull.set(keys.full, player);
+    if(keys.nameTeam!=="|") byNameTeam.set(keys.nameTeam, player);
+    if(keys.namePos!=="|") byNamePos.set(keys.namePos, player);
+    if(keys.nameOnly) byNameOnly.set(keys.nameOnly, player);
+  });
+
+  const adapters=(typeof DataAdapters!=="undefined" && DataAdapters)?DataAdapters:null;
+  const normalizeIdentity=(adapters && typeof adapters.normalizePlayerIdentity==="function") ? adapters.normalizePlayerIdentity : fallbackNormalizePlayerIdentity;
+  const counts={attempted:records.length,matched:0,updated:0,invalid:0,unmatched:0};
+  records.forEach(function(record){
+    const identity=normalizeIdentity(record);
+    let match=null;
+    if(Number.isFinite(identity.id) && byId.has(identity.id)) match=byId.get(identity.id);
+    else {
+      const keys=toNormalizedIdentityKey(identity.name, identity.team, identity.pos);
+      match=byFull.get(keys.full) || byNameTeam.get(keys.nameTeam) || byNamePos.get(keys.namePos) || byNameOnly.get(keys.nameOnly) || null;
+    }
+    if(!match){ counts.unmatched+=1; return; }
+
+    const next2023=normalizeHistoricalStatLine(record && record.stats && record.stats["2023"] ? record.stats["2023"] : record && record["2023"]);
+    const next2024=normalizeHistoricalStatLine(record && record.stats && record.stats["2024"] ? record.stats["2024"] : record && record["2024"]);
+    const next2025=normalizeHistoricalStatLine(record && record.stats && record.stats["2025"] ? record.stats["2025"] : record && record["2025"]);
+    if(!(next2023 || next2024 || next2025)){ counts.invalid+=1; return; }
+
+    counts.matched+=1;
+    if(!match.stats || typeof match.stats!=="object") match.stats={};
+    if(next2023){ match.stats["2023"]=next2023; counts.updated+=1; }
+    if(next2024){ match.stats["2024"]=next2024; counts.updated+=1; }
+    if(next2025){ match.stats["2025"]=next2025; counts.updated+=1; }
+  });
+  return counts;
+}
 function applyAdpOverlay(players, externalPayload){
   if(!Array.isArray(players) || !players.length){
     return {attempted:0,matched:0,updated:0,unmatched:0,invalidAdp:0};
@@ -103,7 +166,13 @@ function applyAdpOverlay(players, externalPayload){
 
   return counts;
 }
-const ADP_OVERLAY_SUMMARY=applyAdpOverlay(PLAYERS, (typeof window!=="undefined" ? window.EXTERNAL_ADP_PAYLOAD : null));
+const HISTORICAL_STATS_PROVIDER_PAYLOAD=(typeof DataProviders!=="undefined" && DataProviders) ? DataProviders.getPayload("historicalStats") : (typeof window!=="undefined" ? window.EXTERNAL_HISTORICAL_STATS_PAYLOAD : null);
+const HISTORICAL_STATS_OVERLAY_SUMMARY=applyHistoricalStatsOverlay(PLAYERS, HISTORICAL_STATS_PROVIDER_PAYLOAD);
+if(HISTORICAL_STATS_OVERLAY_SUMMARY.attempted>0){
+  console.info("[historical stats overlay]", HISTORICAL_STATS_OVERLAY_SUMMARY);
+}
+const ADP_PROVIDER_PAYLOAD=(typeof DataProviders!=="undefined" && DataProviders) ? DataProviders.getPayload("adp") : (typeof window!=="undefined" ? window.EXTERNAL_ADP_PAYLOAD : null);
+const ADP_OVERLAY_SUMMARY=applyAdpOverlay(PLAYERS, ADP_PROVIDER_PAYLOAD);
 if(ADP_OVERLAY_SUMMARY.attempted>0){
   console.info("[ADP overlay]", ADP_OVERLAY_SUMMARY);
 }
