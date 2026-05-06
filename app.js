@@ -180,8 +180,7 @@ if(BLURBS_NEWS_OVERLAY_SUMMARY.attempted>0){
 
 function readProjectionsPayload(){
   if(typeof DataProviders!=="undefined" && DataProviders && typeof DataProviders.projections==="function"){
-    const providedPayload=DataProviders.projections();
-    if(providedPayload && typeof providedPayload==="object") return providedPayload;
+    return DataProviders.projections();
   }
   if(typeof window!=="undefined" && Object.prototype.hasOwnProperty.call(window,"PROJECTIONS_PAYLOAD")){
     const fallbackPayload=window.PROJECTIONS_PAYLOAD;
@@ -221,15 +220,25 @@ function applyProjectionsOverlay(players, payload){
   });
   return counts;
 }
-const PROJECTIONS_OVERLAY_SUMMARY=applyProjectionsOverlay(PLAYERS, readProjectionsPayload());
-if(PROJECTIONS_OVERLAY_SUMMARY.attempted>0){
-  console.info("[Projections overlay]", PROJECTIONS_OVERLAY_SUMMARY);
+function applyProjectionsOverlayAndLog(payload){
+  const summary=applyProjectionsOverlay(PLAYERS, payload);
+  if(summary.attempted>0) console.info("[Projections overlay]", summary);
+  return summary;
+}
+const PROJECTIONS_PAYLOAD_OR_PROMISE=readProjectionsPayload();
+const PROJECTIONS_OVERLAY_SUMMARY=(PROJECTIONS_PAYLOAD_OR_PROMISE && typeof PROJECTIONS_PAYLOAD_OR_PROMISE.then==="function")
+  ? {attempted:0,matched:0,updated:0}
+  : applyProjectionsOverlayAndLog(PROJECTIONS_PAYLOAD_OR_PROMISE);
+if(PROJECTIONS_PAYLOAD_OR_PROMISE && typeof PROJECTIONS_PAYLOAD_OR_PROMISE.then==="function"){
+  PROJECTIONS_PAYLOAD_OR_PROMISE.then(function(resolvedPayload){
+    const asyncSummary=applyProjectionsOverlayAndLog(resolvedPayload);
+    if(asyncSummary.updated>0 && typeof renderAll==="function") renderAll();
+  });
 }
 
 function readHistoricalStatsPayload(){
   if(typeof DataProviders!=="undefined" && DataProviders && typeof DataProviders.historicalStats==="function"){
-    const providedPayload=DataProviders.historicalStats();
-    if(providedPayload && typeof providedPayload==="object") return providedPayload;
+    return DataProviders.historicalStats();
   }
   if(typeof window!=="undefined" && Object.prototype.hasOwnProperty.call(window,"HISTORICAL_STATS_PAYLOAD")){
     const fallbackPayload=window.HISTORICAL_STATS_PAYLOAD;
@@ -274,9 +283,20 @@ function applyHistoricalStatsOverlay(players, payload){
   });
   return counts;
 }
-const HISTORICAL_STATS_OVERLAY_SUMMARY=applyHistoricalStatsOverlay(PLAYERS, readHistoricalStatsPayload());
-if(HISTORICAL_STATS_OVERLAY_SUMMARY.attempted>0){
-  console.info("[Historical stats overlay]", HISTORICAL_STATS_OVERLAY_SUMMARY);
+function applyHistoricalStatsOverlayAndLog(payload){
+  const summary=applyHistoricalStatsOverlay(PLAYERS, payload);
+  if(summary.attempted>0) console.info("[Historical stats overlay]", summary);
+  return summary;
+}
+const HISTORICAL_STATS_PAYLOAD_OR_PROMISE=readHistoricalStatsPayload();
+const HISTORICAL_STATS_OVERLAY_SUMMARY=(HISTORICAL_STATS_PAYLOAD_OR_PROMISE && typeof HISTORICAL_STATS_PAYLOAD_OR_PROMISE.then==="function")
+  ? {attempted:0,matched:0,updated:0}
+  : applyHistoricalStatsOverlayAndLog(HISTORICAL_STATS_PAYLOAD_OR_PROMISE);
+if(HISTORICAL_STATS_PAYLOAD_OR_PROMISE && typeof HISTORICAL_STATS_PAYLOAD_OR_PROMISE.then==="function"){
+  HISTORICAL_STATS_PAYLOAD_OR_PROMISE.then(function(resolvedPayload){
+    const asyncSummary=applyHistoricalStatsOverlayAndLog(resolvedPayload);
+    if(asyncSummary.updated>0 && typeof renderAll==="function") renderAll();
+  });
 }
 
 const state = {format:"half",teams:12,drafted:[],watch:[],compare:[],compareDetailPlayerId:null,rankingDetailPlayerId:null,search:"",pos:"ALL",tab:"setup",rankSort:"rank",rankDir:"asc",favoriteTeam:"",slots:{QB:1,RB:2,WR:2,TE:1,K:1,DST:1,FLEX:1},flexMode:["RB","WR","TE"],compareMetrics:new Set(["position","team","age","exp","bye","elite","projfp","projppg","avg3","gp2025","avg2025","median2025","low2025","high2025","posrank","adp","sleeper","bust","injury"])};

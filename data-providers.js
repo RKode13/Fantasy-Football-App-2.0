@@ -40,15 +40,69 @@
     return remoteAdpPromise;
   }
 
+  let remoteHistoricalStatsPromise=null;
+  function parseRemoteHistoricalStatsSource(raw){
+    if(typeof raw!=="string") return "";
+    const value=raw.trim();
+    if(!value) return "";
+    if(/^https?:\/\//i.test(value) || value.startsWith("/")) return value;
+    return "";
+  }
+
+
   function historicalStats(){
     const payload=readWindowPayload('HISTORICAL_STATS_PAYLOAD');
-    return payload && typeof payload==='object' ? payload : null;
+    if(payload && typeof payload==='object') return payload;
+
+    const source=parseRemoteHistoricalStatsSource(global && global.REMOTE_HISTORICAL_STATS_SOURCE);
+    if(!source || typeof fetch!=="function") return null;
+
+    if(!remoteHistoricalStatsPromise){
+      remoteHistoricalStatsPromise=fetch(source,{cache:'no-store'})
+        .then(function(res){ return res && res.ok ? res.json() : null; })
+        .then(function(json){
+          if(json && typeof json==='object'){
+            global.HISTORICAL_STATS_PAYLOAD=json;
+            return json;
+          }
+          return null;
+        })
+        .catch(function(){ return null; });
+    }
+    return remoteHistoricalStatsPromise;
+  }
+
+
+  let remoteProjectionsPromise=null;
+  function parseRemoteProjectionsSource(raw){
+    if(typeof raw!=="string") return "";
+    const value=raw.trim();
+    if(!value) return "";
+    if(/^https?:\/\//i.test(value) || value.startsWith("/")) return value;
+    return "";
   }
 
 
   function projections(){
     const payload=readWindowPayload('PROJECTIONS_PAYLOAD');
-    return payload && typeof payload==='object' ? payload : null;
+    if(payload && typeof payload==='object') return payload;
+
+    const source=parseRemoteProjectionsSource(global && global.REMOTE_PROJECTIONS_SOURCE);
+    if(!source || typeof fetch!=="function") return null;
+
+    if(!remoteProjectionsPromise){
+      remoteProjectionsPromise=fetch(source,{cache:'no-store'})
+        .then(function(res){ return res && res.ok ? res.json() : null; })
+        .then(function(json){
+          if(json && typeof json==='object'){
+            global.PROJECTIONS_PAYLOAD=json;
+            return json;
+          }
+          return null;
+        })
+        .catch(function(){ return null; });
+    }
+    return remoteProjectionsPromise;
   }
 
 

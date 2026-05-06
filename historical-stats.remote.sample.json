@@ -1,0 +1,38 @@
+{
+  "source": "local-remote-sample",
+  "updatedAt": "2026-05-06T00:00:00Z",
+  "records": [
+    {
+      "name": "Josh Allen",
+      "team": "BUF",
+      "pos": "QB",
+      "stats": {
+        "2025": { "gp": 17, "avg": 25.5, "median": 25.0, "low": 16.0, "high": 36.0 }
+      }
+    },
+    {
+      "name": "Christian McCaffrey",
+      "team": "SF",
+      "pos": "RB",
+      "stats": {
+        "2025": { "gp": 16, "avg": 21.0, "median": 20.6, "low": 9.0, "high": 31.0 }
+      }
+    },
+    {
+      "name": "CeeDee Lamb",
+      "team": "DAL",
+      "pos": "WR",
+      "stats": {
+        "2025": { "gp": 17, "avg": 19.3, "median": 19.0, "low": 8.0, "high": 30.0 }
+      }
+    },
+    {
+      "name": "Travis Kelce",
+      "team": "KC",
+      "pos": "TE",
+      "stats": {
+        "2025": { "gp": 15, "avg": 14.2, "median": 14.0, "low": 5.0, "high": 23.0 }
+      }
+    }
+  ]
+}
