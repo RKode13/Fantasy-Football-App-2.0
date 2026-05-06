@@ -1,0 +1,34 @@
+{
+  "records": [
+    {
+      "name": "Christian McCaffrey",
+      "team": "SF",
+      "pos": "RB",
+      "proj": { "standard": 17.0, "half": 18.5, "ppr": 20.0 }
+    },
+    {
+      "name": "CeeDee Lamb",
+      "team": "DAL",
+      "pos": "WR",
+      "proj": { "standard": 16.2, "half": 18.1, "ppr": 20.0 }
+    },
+    {
+      "name": "Amon-Ra St. Brown",
+      "team": "DET",
+      "pos": "WR",
+      "proj": { "standard": 15.8, "half": 17.8, "ppr": 19.8 }
+    },
+    {
+      "name": "Sam LaPorta",
+      "team": "DET",
+      "pos": "TE",
+      "proj": { "standard": 12.0, "half": 13.6, "ppr": 15.2 }
+    },
+    {
+      "name": "Josh Allen",
+      "team": "BUF",
+      "pos": "QB",
+      "proj": { "standard": 21.0, "half": 21.0, "ppr": 21.0 }
+    }
+  ]
+}
