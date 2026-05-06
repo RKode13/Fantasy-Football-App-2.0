@@ -103,9 +103,30 @@ function applyAdpOverlay(players, externalPayload){
 
   return counts;
 }
-const ADP_OVERLAY_SUMMARY=applyAdpOverlay(PLAYERS, (typeof window!=="undefined" ? window.EXTERNAL_ADP_PAYLOAD : null));
-if(ADP_OVERLAY_SUMMARY.attempted>0){
-  console.info("[ADP overlay]", ADP_OVERLAY_SUMMARY);
+function readAdpPayload(){
+  if(typeof DataProviders!=="undefined" && DataProviders && typeof DataProviders.adp==="function"){
+    return DataProviders.adp();
+  }
+  if(typeof window!=="undefined" && Object.prototype.hasOwnProperty.call(window,"EXTERNAL_ADP_PAYLOAD")){
+    const fallbackPayload=window.EXTERNAL_ADP_PAYLOAD;
+    if(fallbackPayload && typeof fallbackPayload==="object") return fallbackPayload;
+  }
+  return null;
+}
+function applyAdpOverlayAndLog(payload){
+  const summary=applyAdpOverlay(PLAYERS, payload);
+  if(summary.attempted>0) console.info("[ADP overlay]", summary);
+  return summary;
+}
+const ADP_PAYLOAD_OR_PROMISE=readAdpPayload();
+const ADP_OVERLAY_SUMMARY=(ADP_PAYLOAD_OR_PROMISE && typeof ADP_PAYLOAD_OR_PROMISE.then==="function")
+  ? {attempted:0,matched:0,updated:0,unmatched:0,invalidAdp:0}
+  : applyAdpOverlayAndLog(ADP_PAYLOAD_OR_PROMISE);
+if(ADP_PAYLOAD_OR_PROMISE && typeof ADP_PAYLOAD_OR_PROMISE.then==="function"){
+  ADP_PAYLOAD_OR_PROMISE.then(function(resolvedPayload){
+    const asyncSummary=applyAdpOverlayAndLog(resolvedPayload);
+    if(asyncSummary.updated>0 && typeof renderAll==="function") renderAll();
+  });
 }
 
 
