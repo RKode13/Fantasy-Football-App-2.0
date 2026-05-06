@@ -103,9 +103,30 @@ function applyAdpOverlay(players, externalPayload){
 
   return counts;
 }
-const ADP_OVERLAY_SUMMARY=applyAdpOverlay(PLAYERS, (typeof window!=="undefined" ? window.EXTERNAL_ADP_PAYLOAD : null));
-if(ADP_OVERLAY_SUMMARY.attempted>0){
-  console.info("[ADP overlay]", ADP_OVERLAY_SUMMARY);
+function readAdpPayload(){
+  if(typeof DataProviders!=="undefined" && DataProviders && typeof DataProviders.adp==="function"){
+    return DataProviders.adp();
+  }
+  if(typeof window!=="undefined" && Object.prototype.hasOwnProperty.call(window,"EXTERNAL_ADP_PAYLOAD")){
+    const fallbackPayload=window.EXTERNAL_ADP_PAYLOAD;
+    if(fallbackPayload && typeof fallbackPayload==="object") return fallbackPayload;
+  }
+  return null;
+}
+function applyAdpOverlayAndLog(payload){
+  const summary=applyAdpOverlay(PLAYERS, payload);
+  if(summary.attempted>0) console.info("[ADP overlay]", summary);
+  return summary;
+}
+const ADP_PAYLOAD_OR_PROMISE=readAdpPayload();
+const ADP_OVERLAY_SUMMARY=(ADP_PAYLOAD_OR_PROMISE && typeof ADP_PAYLOAD_OR_PROMISE.then==="function")
+  ? {attempted:0,matched:0,updated:0,unmatched:0,invalidAdp:0}
+  : applyAdpOverlayAndLog(ADP_PAYLOAD_OR_PROMISE);
+if(ADP_PAYLOAD_OR_PROMISE && typeof ADP_PAYLOAD_OR_PROMISE.then==="function"){
+  ADP_PAYLOAD_OR_PROMISE.then(function(resolvedPayload){
+    const asyncSummary=applyAdpOverlayAndLog(resolvedPayload);
+    if(asyncSummary.updated>0 && typeof renderAll==="function") renderAll();
+  });
 }
 
 
@@ -207,8 +228,7 @@ if(PROJECTIONS_OVERLAY_SUMMARY.attempted>0){
 
 function readHistoricalStatsPayload(){
   if(typeof DataProviders!=="undefined" && DataProviders && typeof DataProviders.historicalStats==="function"){
-    const providedPayload=DataProviders.historicalStats();
-    if(providedPayload && typeof providedPayload==="object") return providedPayload;
+    return DataProviders.historicalStats();
   }
   if(typeof window!=="undefined" && Object.prototype.hasOwnProperty.call(window,"HISTORICAL_STATS_PAYLOAD")){
     const fallbackPayload=window.HISTORICAL_STATS_PAYLOAD;
@@ -253,9 +273,20 @@ function applyHistoricalStatsOverlay(players, payload){
   });
   return counts;
 }
-const HISTORICAL_STATS_OVERLAY_SUMMARY=applyHistoricalStatsOverlay(PLAYERS, readHistoricalStatsPayload());
-if(HISTORICAL_STATS_OVERLAY_SUMMARY.attempted>0){
-  console.info("[Historical stats overlay]", HISTORICAL_STATS_OVERLAY_SUMMARY);
+function applyHistoricalStatsOverlayAndLog(payload){
+  const summary=applyHistoricalStatsOverlay(PLAYERS, payload);
+  if(summary.attempted>0) console.info("[Historical stats overlay]", summary);
+  return summary;
+}
+const HISTORICAL_STATS_PAYLOAD_OR_PROMISE=readHistoricalStatsPayload();
+const HISTORICAL_STATS_OVERLAY_SUMMARY=(HISTORICAL_STATS_PAYLOAD_OR_PROMISE && typeof HISTORICAL_STATS_PAYLOAD_OR_PROMISE.then==="function")
+  ? {attempted:0,matched:0,updated:0}
+  : applyHistoricalStatsOverlayAndLog(HISTORICAL_STATS_PAYLOAD_OR_PROMISE);
+if(HISTORICAL_STATS_PAYLOAD_OR_PROMISE && typeof HISTORICAL_STATS_PAYLOAD_OR_PROMISE.then==="function"){
+  HISTORICAL_STATS_PAYLOAD_OR_PROMISE.then(function(resolvedPayload){
+    const asyncSummary=applyHistoricalStatsOverlayAndLog(resolvedPayload);
+    if(asyncSummary.updated>0 && typeof renderAll==="function") renderAll();
+  });
 }
 
 const state = {format:"half",teams:12,drafted:[],watch:[],compare:[],compareDetailPlayerId:null,rankingDetailPlayerId:null,search:"",pos:"ALL",tab:"setup",rankSort:"rank",rankDir:"asc",favoriteTeam:"",slots:{QB:1,RB:2,WR:2,TE:1,K:1,DST:1,FLEX:1},flexMode:["RB","WR","TE"],compareMetrics:new Set(["position","team","age","exp","bye","elite","projfp","projppg","avg3","gp2025","avg2025","median2025","low2025","high2025","posrank","adp","sleeper","bust","injury"])};
