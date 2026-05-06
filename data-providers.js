@@ -9,7 +9,8 @@
   }
 
   function historicalStats(){
-    return readWindowPayload('HISTORICAL_STATS_PAYLOAD');
+    const payload=readWindowPayload('HISTORICAL_STATS_PAYLOAD');
+    return payload && typeof payload==='object' ? payload : null;
   }
 
   existing.historicalStats=historicalStats;
