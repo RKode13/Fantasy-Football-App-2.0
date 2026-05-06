@@ -13,6 +13,13 @@
     return payload && typeof payload==='object' ? payload : null;
   }
 
+
+  function projections(){
+    const payload=readWindowPayload('PROJECTIONS_PAYLOAD');
+    return payload && typeof payload==='object' ? payload : null;
+  }
+
   existing.historicalStats=historicalStats;
+  existing.projections=projections;
   global.DataProviders=existing;
 })(typeof window!=='undefined' ? window : globalThis);
