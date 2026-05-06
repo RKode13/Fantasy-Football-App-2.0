@@ -108,6 +108,54 @@ if(ADP_OVERLAY_SUMMARY.attempted>0){
   console.info("[ADP overlay]", ADP_OVERLAY_SUMMARY);
 }
 
+function readBlurbsNewsPayload(){
+  if(typeof DataProviders!=="undefined" && DataProviders && typeof DataProviders.blurbsNews==="function"){
+    const providedPayload=DataProviders.blurbsNews();
+    if(providedPayload && typeof providedPayload==="object") return providedPayload;
+  }
+  if(typeof window!=="undefined" && Object.prototype.hasOwnProperty.call(window,"BLURBS_NEWS_PAYLOAD")){
+    const fallbackPayload=window.BLURBS_NEWS_PAYLOAD;
+    if(fallbackPayload && typeof fallbackPayload==="object") return fallbackPayload;
+  }
+  return null;
+}
+function applyBlurbsNewsOverlay(players, payload){
+  if(!Array.isArray(players) || !players.length || !payload || typeof payload!=="object") return {attempted:0,matched:0,updated:0};
+  const byId=new Map();
+  const byName=new Map();
+  players.forEach(function(player){
+    if(player && typeof player.id==="number") byId.set(player.id, player);
+    if(player && typeof player.name==="string") byName.set(player.name.trim().toLowerCase(), player);
+  });
+  const records=Array.isArray(payload.records)?payload.records:Array.isArray(payload.players)?payload.players:Array.isArray(payload.data)?payload.data:[];
+  const fields=["blurb","blurbs","news","comment","comments"];
+  const counts={attempted:records.length,matched:0,updated:0};
+  records.forEach(function(record){
+    if(!record || typeof record!=="object") return;
+    const idNum=Number(record.id ?? record.playerId ?? record.player_id);
+    const nameKey=typeof (record.name ?? record.playerName)==="string" ? (record.name ?? record.playerName).trim().toLowerCase() : "";
+    const player=Number.isFinite(idNum)?byId.get(Math.trunc(idNum)):(nameKey?byName.get(nameKey):null);
+    if(!player) return;
+    counts.matched+=1;
+    let didUpdate=false;
+    fields.forEach(function(field){
+      if(!Object.prototype.hasOwnProperty.call(record,field)) return;
+      const incoming=record[field];
+      if(typeof incoming!=="string") return;
+      if(player[field]!==incoming){
+        player[field]=incoming;
+        didUpdate=true;
+      }
+    });
+    if(didUpdate) counts.updated+=1;
+  });
+  return counts;
+}
+const BLURBS_NEWS_OVERLAY_SUMMARY=applyBlurbsNewsOverlay(PLAYERS, readBlurbsNewsPayload());
+if(BLURBS_NEWS_OVERLAY_SUMMARY.attempted>0){
+  console.info("[Blurbs/news overlay]", BLURBS_NEWS_OVERLAY_SUMMARY);
+}
+
 function readHistoricalStatsPayload(){
   if(typeof DataProviders!=="undefined" && DataProviders && typeof DataProviders.historicalStats==="function"){
     const providedPayload=DataProviders.historicalStats();
