@@ -1,0 +1,54 @@
+{
+  "source": "local-remote-adp-sample",
+  "updatedAt": "2026-05-06T00:00:00Z",
+  "records": [
+    {
+      "name": "Josh Allen",
+      "team": "BUF",
+      "pos": "QB",
+      "overall": 12.0
+    },
+    {
+      "name": "Jalen Hurts",
+      "team": "PHI",
+      "pos": "QB",
+      "overall": 18.0
+    },
+    {
+      "name": "Christian McCaffrey",
+      "team": "SF",
+      "pos": "RB",
+      "overall": 3.0
+    },
+    {
+      "name": "Bijan Robinson",
+      "team": "ATL",
+      "pos": "RB",
+      "overall": 6.0
+    },
+    {
+      "name": "Saquon Barkley",
+      "team": "PHI",
+      "pos": "RB",
+      "overall": 9.0
+    },
+    {
+      "name": "CeeDee Lamb",
+      "team": "DAL",
+      "pos": "WR",
+      "overall": 2.0
+    },
+    {
+      "name": "Tyreek Hill",
+      "team": "MIA",
+      "pos": "WR",
+      "overall": 4.0
+    },
+    {
+      "name": "Travis Kelce",
+      "team": "KC",
+      "pos": "TE",
+      "overall": 28.0
+    }
+  ]
+}
