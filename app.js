@@ -108,6 +108,54 @@ if(ADP_OVERLAY_SUMMARY.attempted>0){
   console.info("[ADP overlay]", ADP_OVERLAY_SUMMARY);
 }
 
+function readProjectionsPayload(){
+  if(typeof DataProviders!=="undefined" && DataProviders && typeof DataProviders.projections==="function"){
+    const providedPayload=DataProviders.projections();
+    if(providedPayload && typeof providedPayload==="object") return providedPayload;
+  }
+  if(typeof window!=="undefined" && Object.prototype.hasOwnProperty.call(window,"PROJECTIONS_PAYLOAD")){
+    const fallbackPayload=window.PROJECTIONS_PAYLOAD;
+    if(fallbackPayload && typeof fallbackPayload==="object") return fallbackPayload;
+  }
+  return null;
+}
+function applyProjectionsOverlay(players, payload){
+  if(!Array.isArray(players) || !players.length || !payload || typeof payload!=="object") return {attempted:0,matched:0,updated:0};
+  const byId=new Map();
+  const byName=new Map();
+  players.forEach(function(player){
+    if(player && typeof player.id==="number") byId.set(player.id, player);
+    if(player && typeof player.name==="string") byName.set(player.name.trim().toLowerCase(), player);
+  });
+  const records=Array.isArray(payload.records)?payload.records:Array.isArray(payload.players)?payload.players:Array.isArray(payload.data)?payload.data:[];
+  const counts={attempted:records.length,matched:0,updated:0};
+  records.forEach(function(record){
+    if(!record || typeof record!=="object") return;
+    const idNum=Number(record.id ?? record.playerId ?? record.player_id);
+    const nameKey=typeof (record.name ?? record.playerName)==="string" ? (record.name ?? record.playerName).trim().toLowerCase() : "";
+    const player=Number.isFinite(idNum)?byId.get(Math.trunc(idNum)):(nameKey?byName.get(nameKey):null);
+    if(!player) return;
+    const nextProj=record.proj;
+    if(!nextProj || typeof nextProj!=="object") return;
+    counts.matched+=1;
+    if(!player.proj || typeof player.proj!=="object") return;
+    let didUpdate=false;
+    ["standard","half","ppr"].forEach(function(format){
+      const val=Number(nextProj[format]);
+      if(Number.isFinite(val) && player.proj[format]!==val){
+        player.proj[format]=val;
+        didUpdate=true;
+      }
+    });
+    if(didUpdate) counts.updated+=1;
+  });
+  return counts;
+}
+const PROJECTIONS_OVERLAY_SUMMARY=applyProjectionsOverlay(PLAYERS, readProjectionsPayload());
+if(PROJECTIONS_OVERLAY_SUMMARY.attempted>0){
+  console.info("[Projections overlay]", PROJECTIONS_OVERLAY_SUMMARY);
+}
+
 function readHistoricalStatsPayload(){
   if(typeof DataProviders!=="undefined" && DataProviders && typeof DataProviders.historicalStats==="function"){
     const providedPayload=DataProviders.historicalStats();
