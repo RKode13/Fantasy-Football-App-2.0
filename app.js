@@ -180,8 +180,7 @@ if(BLURBS_NEWS_OVERLAY_SUMMARY.attempted>0){
 
 function readProjectionsPayload(){
   if(typeof DataProviders!=="undefined" && DataProviders && typeof DataProviders.projections==="function"){
-    const providedPayload=DataProviders.projections();
-    if(providedPayload && typeof providedPayload==="object") return providedPayload;
+    return DataProviders.projections();
   }
   if(typeof window!=="undefined" && Object.prototype.hasOwnProperty.call(window,"PROJECTIONS_PAYLOAD")){
     const fallbackPayload=window.PROJECTIONS_PAYLOAD;
@@ -221,9 +220,17 @@ function applyProjectionsOverlay(players, payload){
   });
   return counts;
 }
-const PROJECTIONS_OVERLAY_SUMMARY=applyProjectionsOverlay(PLAYERS, readProjectionsPayload());
-if(PROJECTIONS_OVERLAY_SUMMARY.attempted>0){
-  console.info("[Projections overlay]", PROJECTIONS_OVERLAY_SUMMARY);
+const PROJECTIONS_PAYLOAD_OR_PROMISE=readProjectionsPayload();
+const PROJECTIONS_OVERLAY_SUMMARY=(PROJECTIONS_PAYLOAD_OR_PROMISE && typeof PROJECTIONS_PAYLOAD_OR_PROMISE.then==="function")
+  ? {attempted:0,matched:0,updated:0}
+  : applyProjectionsOverlay(PLAYERS, PROJECTIONS_PAYLOAD_OR_PROMISE);
+if(PROJECTIONS_OVERLAY_SUMMARY.attempted>0) console.info("[Projections overlay]", PROJECTIONS_OVERLAY_SUMMARY);
+if(PROJECTIONS_PAYLOAD_OR_PROMISE && typeof PROJECTIONS_PAYLOAD_OR_PROMISE.then==="function"){
+  PROJECTIONS_PAYLOAD_OR_PROMISE.then(function(resolvedPayload){
+    const asyncSummary=applyProjectionsOverlay(PLAYERS, resolvedPayload);
+    if(asyncSummary.attempted>0) console.info("[Projections overlay]", asyncSummary);
+    if(asyncSummary.updated>0 && typeof renderAll==="function") renderAll();
+  });
 }
 
 function readHistoricalStatsPayload(){
