@@ -109,8 +109,14 @@ if(ADP_OVERLAY_SUMMARY.attempted>0){
 }
 
 function readHistoricalStatsPayload(){
-  if(typeof DataProviders!=="undefined" && DataProviders && typeof DataProviders.historicalStats==="function") return DataProviders.historicalStats();
-  if(typeof window!=="undefined" && Object.prototype.hasOwnProperty.call(window,"HISTORICAL_STATS_PAYLOAD")) return window.HISTORICAL_STATS_PAYLOAD;
+  if(typeof DataProviders!=="undefined" && DataProviders && typeof DataProviders.historicalStats==="function"){
+    const providedPayload=DataProviders.historicalStats();
+    if(providedPayload && typeof providedPayload==="object") return providedPayload;
+  }
+  if(typeof window!=="undefined" && Object.prototype.hasOwnProperty.call(window,"HISTORICAL_STATS_PAYLOAD")){
+    const fallbackPayload=window.HISTORICAL_STATS_PAYLOAD;
+    if(fallbackPayload && typeof fallbackPayload==="object") return fallbackPayload;
+  }
   return null;
 }
 function applyHistoricalStatsOverlay(players, payload){
