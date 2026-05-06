@@ -19,7 +19,14 @@
     return payload && typeof payload==='object' ? payload : null;
   }
 
+
+  function blurbsNews(){
+    const payload=readWindowPayload('BLURBS_NEWS_PAYLOAD');
+    return payload && typeof payload==='object' ? payload : null;
+  }
+
   existing.historicalStats=historicalStats;
   existing.projections=projections;
+  existing.blurbsNews=blurbsNews;
   global.DataProviders=existing;
 })(typeof window!=='undefined' ? window : globalThis);
