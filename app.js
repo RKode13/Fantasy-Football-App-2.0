@@ -173,9 +173,19 @@ function applyBlurbsNewsOverlay(players, payload){
   });
   return counts;
 }
-const BLURBS_NEWS_OVERLAY_SUMMARY=applyBlurbsNewsOverlay(PLAYERS, readBlurbsNewsPayload());
+const BLURBS_NEWS_PAYLOAD_OR_PROMISE=readBlurbsNewsPayload();
+const BLURBS_NEWS_OVERLAY_SUMMARY=(BLURBS_NEWS_PAYLOAD_OR_PROMISE && typeof BLURBS_NEWS_PAYLOAD_OR_PROMISE.then==="function")
+  ? {attempted:0,matched:0,updated:0}
+  : applyBlurbsNewsOverlay(PLAYERS, BLURBS_NEWS_PAYLOAD_OR_PROMISE);
 if(BLURBS_NEWS_OVERLAY_SUMMARY.attempted>0){
   console.info("[Blurbs/news overlay]", BLURBS_NEWS_OVERLAY_SUMMARY);
+}
+if(BLURBS_NEWS_PAYLOAD_OR_PROMISE && typeof BLURBS_NEWS_PAYLOAD_OR_PROMISE.then==="function"){
+  BLURBS_NEWS_PAYLOAD_OR_PROMISE.then(function(resolvedPayload){
+    const asyncSummary=applyBlurbsNewsOverlay(PLAYERS, resolvedPayload);
+    if(asyncSummary.attempted>0) console.info("[Blurbs/news overlay]", asyncSummary);
+    if(asyncSummary.updated>0 && typeof renderAll==="function") renderAll();
+  });
 }
 
 function readProjectionsPayload(){
