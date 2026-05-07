@@ -1,0 +1,40 @@
+{
+  "records": [
+    {
+      "name": "Josh Allen",
+      "team": "BUF",
+      "pos": "QB",
+      "narrative": "Sample remote narrative: Josh Allen remains a high-floor QB option with elite weekly upside.",
+      "blurb": "Sample remote blurb: Full participant in practice.",
+      "news": "Sample remote news: Coaching staff expects normal workload entering Week 1.",
+      "comment": "Sample remote comment: Use this entry to verify remote blurbs/news overlay."
+    },
+    {
+      "name": "Christian McCaffrey",
+      "team": "SF",
+      "pos": "RB",
+      "narrative": "Sample remote narrative: Christian McCaffrey remains a premium dual-threat RB when active.",
+      "blurb": "Sample remote blurb: No current injury designation.",
+      "news": "Sample remote news: Team expects him to handle a leading share of touches.",
+      "comment": "Sample remote comment: Remote overlay should replace local/static text for testing."
+    },
+    {
+      "name": "CeeDee Lamb",
+      "team": "DAL",
+      "pos": "WR",
+      "narrative": "Sample remote narrative: CeeDee Lamb projects as a volume-driven WR1 with strong weekly target share.",
+      "blurb": "Sample remote blurb: Working as the clear top receiving option.",
+      "news": "Sample remote news: Offense continues to build around quick reads and slot motion.",
+      "comment": "Sample remote comment: Easy test player for remote narrative/blurb refresh."
+    },
+    {
+      "name": "Travis Kelce",
+      "team": "KC",
+      "pos": "TE",
+      "narrative": "Sample remote narrative: Travis Kelce still offers top-tier positional advantage in the passing game.",
+      "blurb": "Sample remote blurb: Veteran maintenance schedule but expected to be ready.",
+      "news": "Sample remote news: Red-zone usage remains a focal point in the offense.",
+      "comment": "Sample remote comment: Confirm remote TE text updates appear correctly."
+    }
+  ]
+}
