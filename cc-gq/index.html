@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CC — GQ Feature</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#050505;color:#fff;font-family:Arial,sans-serif;overflow:hidden}.v{height:100%;display:grid;grid-template-rows:1fr auto}.s{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:8px}.p{position:absolute;inset:8px;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:.2s}.p.a{opacity:1;pointer-events:auto}.p img{max-width:100%;max-height:100%;object-fit:contain;box-shadow:0 12px 40px #000}.c{display:grid;grid-template-columns:64px 1fr 64px;align-items:center;gap:8px;padding:8px 12px max(10px,env(safe-area-inset-bottom));background:#0b0b0b}button{height:42px;border:1px solid #333;border-radius:99px;background:#171717;color:#fff;font-size:22px}button:disabled{opacity:.25}.m{text-align:center}.t{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.d{margin-top:5px;display:flex;justify-content:center;gap:8px}.dot{width:8px;height:8px;border-radius:50%;background:#555}.dot.a{background:#fff}.loading{font-size:14px;color:#aaa}
+</style>
+</head>
+<body>
+<div class="v"><div class="s" id="s"><div class="loading" id="loading">Loading magazine…</div></div>
+<div class="c"><button id="b" disabled>‹</button><div class="m"><div class="t" id="t">Cover · 1 / 3</div><div class="d"><i class="dot a"></i><i class="dot"></i><i class="dot"></i></div></div><button id="n">›</button></div></div>
+<script>
+(async()=>{
+ const names=['page1.b64','page2.b64','page3.b64'],titles=['Cover','King of Cool','Living on the Edge'];
+ const s=document.getElementById('s'),dots=[...document.querySelectorAll('.dot')],b=document.getElementById('b'),n=document.getElementById('n'),t=document.getElementById('t');
+ const data=await Promise.all(names.map(x=>fetch(x).then(r=>{if(!r.ok)throw new Error('load');return r.text()})));
+ document.getElementById('loading').remove();
+ const P=data.map((x,i)=>{let sec=document.createElement('section');sec.className='p'+(i?'':' a');let img=new Image();img.alt=titles[i];img.src='data:image/webp;base64,'+x.trim();sec.appendChild(img);s.appendChild(sec);return sec});
+ let i=0,x0=null;
+ function g(j){i=Math.max(0,Math.min(2,j));P.forEach((e,k)=>e.classList.toggle('a',k===i));dots.forEach((e,k)=>e.classList.toggle('a',k===i));b.disabled=i===0;n.disabled=i===2;t.textContent=titles[i]+' · '+(i+1)+' / 3';history.replaceState(null,'','#page-'+(i+1))}
+ b.onclick=()=>g(i-1);n.onclick=()=>g(i+1);dots.forEach((d,k)=>d.onclick=()=>g(k));document.onkeydown=e=>{if(e.key==='ArrowLeft')g(i-1);if(e.key==='ArrowRight')g(i+1)};
+ s.ontouchstart=e=>x0=e.touches[0].clientX;s.ontouchend=e=>{let d=e.changedTouches[0].clientX-x0;if(Math.abs(d)>40)g(i+(d<0?1:-1));x0=null};
+ let m=location.hash.match(/page-(\d+)/);if(m)g(+m[1]-1);
+})().catch(()=>document.getElementById('loading').textContent='Could not load the magazine.');
+</script>
+</body></html>
